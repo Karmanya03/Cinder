@@ -1,0 +1,75 @@
+name: Mobile shells
+
+on:
+  workflow_dispatch:
+    inputs:
+      android:
+        description: Build the Android release shell
+        type: boolean
+        default: true
+      ios:
+        description: Build the iOS shell on macOS
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    if: inputs.android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973"
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+      - name: Build Rust mobile library
+        run: cargo ndk -t arm64-v8a build --release --manifest-path mobile/native/Cargo.toml
+      - name: Stage JNI library
+        run: |
+          mkdir -p mobile/android/app/src/main/jniLibs/arm64-v8a
+          cp mobile/native/target/aarch64-linux-android/release/libcinder_mobile.so mobile/android/app/src/main/jniLibs/arm64-v8a/
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+      - name: Build unsigned Android release
+        working-directory: mobile/android
+        run: gradle assembleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cinder-android-unsigned
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+
+  ios:
+    if: inputs.ios
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - name: Build Rust iOS static library
+        run: cargo build --release --manifest-path mobile/native/Cargo.toml --target aarch64-apple-ios
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate --spec mobile/ios/project.yml --project mobile/ios/CinderMobile.xcodeproj
+      - name: Build unsigned iOS archive
+        run: |
+          xcodebuild -project mobile/ios/CinderMobile.xcodeproj -scheme CinderMobile \
+            -sdk iphoneos -configuration Release -archivePath "$RUNNER_TEMP/CinderMobile.xcarchive" \
+            archive CODE_SIGNING_ALLOWED=NO
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cinder-ios-unsigned-archive
+          path: ${{ runner.temp }}/CinderMobile.xcarchive

@@ -1,0 +1,21 @@
+[package]
+name = "cinder-formats"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Karmanya03/Cinder"
+readme = "../README.md"
+description = "Multi-format archive adapters (zip/tar/gz/zst/xz) for Cinder with shared safety guarantees"
+
+[dependencies]
+cinder-core = { version = "1.0.0", path = "../cinder-core" }
+flate2 = "1.1.9"
+liblzma = "0.4.8"
+rars = { version = "0.11.0", default-features = false, features = ["encryption", "parallel", "write"] }
+sevenz-rust2 = { version = "0.24.1", features = ["deflate", "zstd"] }
+tar = "0.4.46"
+thiserror = "2.0.20"
+tempfile = "3.27.0"
+walkdir = "2.5.0"
+zip = "8.6.0"
+zstd = "0.13.3"

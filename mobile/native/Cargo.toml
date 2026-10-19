@@ -1,0 +1,18 @@
+[package]
+name = "cinder-mobile"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+cinder-core = { path = "../../cinder-core" }
+libc = "0.2.174"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"

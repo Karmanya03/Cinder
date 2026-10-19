@@ -1,0 +1,24 @@
+[package]
+name = "cinder-gui"
+version = "1.0.0"
+edition = "2021"
+description = "Cinder graphical archiver"
+license = "MIT"
+repository = "https://github.com/Karmanya03/Cinder"
+readme = "../README.md"
+
+[dependencies]
+anyhow = "1.0.104"
+cinder-core = { version = "1.0.0", path = "../cinder-core" }
+cinder-formats = { version = "1.0.0", path = "../cinder-formats" }
+crossbeam-channel = "0.5.16"
+eframe = { version = "0.35.0", features = ["android-game-activity"] }
+egui_extras = "0.35.0"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+rfd = "0.17.2"
+
+[build-dependencies]
+ico = "0.4.0"
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+winres = "0.1.12"

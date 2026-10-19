@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["cinder-core", "cinder-cli", "cinder-formats", "cinder-gui"]
+
+[profile.release]
+lto = true
+codegen-units = 1

@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cli:
+    name: CLI - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: cinder-cli.exe
+          - name: linux-x86_64-musl
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary: cinder-cli
+          - name: macos-x86_64
+            os: macos-13
+            target: x86_64-apple-darwin
+            binary: cinder-cli
+          - name: macos-aarch64
+            os: macos-14
+            target: aarch64-apple-darwin
+            binary: cinder-cli
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Reproducible build environment
+        shell: bash
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+      - name: Install musl linker
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build CLI
+        run: cargo build --release -p cinder-cli --target ${{ matrix.target }}
+      - name: Stage artifact (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cp target/${{ matrix.target }}/release/${{ matrix.binary }} artifacts/cinder-cli-${{ matrix.name }}
+      - name: Stage artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" "artifacts/cinder-cli-${{ matrix.name }}.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cinder-cli-${{ matrix.name }}
+          path: artifacts/*
+
+  gui:
+    name: GUI - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: cinder-gui.exe
+          - name: linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: cinder-gui
+          - name: macos-x86_64
+            os: macos-13
+            target: x86_64-apple-darwin
+            binary: cinder-gui
+          - name: macos-aarch64
+            os: macos-14
+            target: aarch64-apple-darwin
+            binary: cinder-gui
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Reproducible build environment
+        shell: bash
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+      - name: Linux GUI dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libx11-dev libxkbcommon-dev
+      - name: Build GUI
+        run: cargo build --release -p cinder-gui --target ${{ matrix.target }}
+      - name: Stage artifact (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cp target/${{ matrix.target }}/release/${{ matrix.binary }} artifacts/cinder-gui-${{ matrix.name }}
+      - name: Stage artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" "artifacts/cinder-gui-${{ matrix.name }}.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cinder-gui-${{ matrix.name }}
+          path: artifacts/*
+
+  publish:
+    name: Publish GitHub release
+    needs: [cli, gui]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: cinder-*
+          merge-multiple: true
+      - name: Reproducible build metadata
+        working-directory: artifacts
+        run: |
+          printf '{"repository":"%s","tag":"%s","workflow":"%s","sha":"%s"}\n' \
+            "${GITHUB_REPOSITORY}" "${GITHUB_REF_NAME}" "${GITHUB_WORKFLOW}" "${GITHUB_SHA}" > BUILD-INFO.json
+      - name: Checksums
+        working-directory: artifacts
+        run: sha256sum * > SHA256SUMS
+      - name: Attest release subjects
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'artifacts/*'
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*
