@@ -385,7 +385,7 @@ fn list_zip(archive: &Path) -> Result<Vec<EntryInfo>> {
     for i in 0..ar.len() {
         let f = ar.by_index(i).map_err(|e| zip_err(&e))?;
         out.push(EntryInfo {
-            name: f.name().to_string(),
+            name: f.name().map_err(|e| zip_err(&e))?.into_owned(),
             size: Some(f.size()),
             packed: Some(f.compressed_size()),
             modified: last_modified_string(&f),
@@ -584,14 +584,14 @@ fn extract_zip(
     // cannot leave earlier files behind.
     for i in 0..ar.len() {
         let zf = ar.by_index(i).map_err(|e| zip_err(&e))?;
-        let name = zf.name().to_string();
+        let name = zf.name().map_err(|e| zip_err(&e))?.into_owned();
         if selection.allows(&name) {
             super::validate_entry_path(root_canonical, &name)?;
         }
     }
     for i in 0..ar.len() {
         let mut zf = ar.by_index(i).map_err(|e| zip_err(&e))?;
-        let name = zf.name().to_string();
+        let name = zf.name().map_err(|e| zip_err(&e))?.into_owned();
         if !selection.allows(&name) {
             continue;
         }
