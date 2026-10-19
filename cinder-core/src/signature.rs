@@ -149,7 +149,7 @@ fn read_fixed_hex<const N: usize>(value: &str) -> Result<[u8; N]> {
         return Err(CinderError::InvalidInput(format!("expected {N} hex bytes")));
     }
     let mut out = [0u8; N];
-    for (i, pair) in value.as_bytes().chunks_exact(2).enumerate() {
+    for (i, pair) in value.as_bytes().as_chunks::<2>().0.iter().enumerate() {
         let hi = hex_digit(pair[0])?;
         let lo = hex_digit(pair[1])?;
         out[i] = (hi << 4) | lo;
