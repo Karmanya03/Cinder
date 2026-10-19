@@ -322,5 +322,5 @@ fn unique_temp_dir(label: &str) -> Result<PathBuf> {
             .as_nanos()
     ));
     fs::create_dir_all(&path)?;
-    Ok(path)
+    Ok(fs::canonicalize(path)?)
 }
