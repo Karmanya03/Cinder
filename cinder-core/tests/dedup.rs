@@ -42,7 +42,10 @@ fn tempdir(tag: &str) -> PathBuf {
             .as_nanos()
     ));
     fs::create_dir_all(&p).expect("tempdir");
-    p
+    // macOS exposes the temporary directory through `/var`, which aliases
+    // `/private/var`. Keep fixtures on the canonical path so archive walk
+    // tests exercise portable relative names rather than the alias.
+    fs::canonicalize(p).expect("canonical tempdir")
 }
 
 /// Deterministic xorshift64* fill.
