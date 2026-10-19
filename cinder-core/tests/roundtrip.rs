@@ -47,7 +47,7 @@ fn tempdir(tag: &str) -> PathBuf {
             .as_nanos()
     ));
     fs::create_dir_all(&p).expect("create tempdir");
-    p
+    fs::canonicalize(p).expect("canonical tempdir")
 }
 
 fn write_file(path: &Path, contents: &[u8]) {

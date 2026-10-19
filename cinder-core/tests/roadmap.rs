@@ -11,7 +11,7 @@ fn tempdir(label: &str) -> PathBuf {
     let path = std::env::temp_dir().join(format!("cinder-roadmap-{label}-{}", std::process::id()));
     fs::remove_dir_all(&path).ok();
     fs::create_dir_all(&path).unwrap();
-    path
+    fs::canonicalize(path).unwrap()
 }
 
 fn quiet() -> Arc<dyn Fn(&ProgressEvent) + Send + Sync> {

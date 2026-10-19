@@ -43,7 +43,7 @@ fn tempdir(tag: &str) -> PathBuf {
             .as_nanos()
     ));
     fs::create_dir_all(&p).expect("tempdir");
-    p
+    fs::canonicalize(p).expect("canonical tempdir")
 }
 
 /// Build a complete plaintext archive from a manifest and raw frame bytes:
@@ -431,7 +431,9 @@ proptest! {
         offset in 0usize..4096,
         mask in 0u8..=255,
     ) {
-        let dir = std::env::temp_dir().join(format!("cinder-bitflip-{}", std::process::id()));
+        let dir = fs::canonicalize(std::env::temp_dir())
+            .unwrap()
+            .join(format!("cinder-bitflip-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let src = dir.join("src.bin");
         std::fs::write(&src, vec![0xA5u8; 4096]).unwrap();

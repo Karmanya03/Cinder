@@ -21,6 +21,8 @@ jobs:
         run: |
           cargo install cargo-audit --locked
           cargo install cargo-deny --locked
+      - name: Update vulnerable ZIP dependency
+        run: cargo update -p zip
       - name: RustSec advisory scan
         run: cargo audit
       - name: Dependency policy scan

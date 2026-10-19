@@ -40,7 +40,7 @@ fn tempdir(tag: &str) -> PathBuf {
             .as_nanos()
     ));
     fs::create_dir_all(&p).expect("tempdir");
-    p
+    fs::canonicalize(p).expect("canonical tempdir")
 }
 
 /// VM-snapshot-flavoured filler: zero runs + a repeating 4 MiB page-pool +
