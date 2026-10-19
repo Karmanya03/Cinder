@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/written%20in-Rust-orange?style=flat-square&logo=rust" alt="Rust" />
   <img src="https://img.shields.io/badge/compression-lossless-ff6b35?style=flat-square" alt="Lossless compression" />
   <img src="https://img.shields.io/badge/security-XChaCha20--Poly1305-8b5cf6?style=flat-square" alt="Encryption" />
-  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT license" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT license" /></a>
 </p>
 
 <p align="center">
@@ -359,4 +359,4 @@ Before publishing a release:
 
 ## License
 
-Cinder is released under the [MIT License](LICENSE.md).
+Cinder is released under the [MIT License](LICENSE).

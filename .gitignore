@@ -1,7 +1,8 @@
-/target
+/target/
 **/target/
-/mobile/android/.gradle/
+**/.gradle/
 /mobile/android/build/
+/mobile/android/app/src/main/jniLibs/
 /mobile/ios/build/
 Cargo.lock.orig
 *.cnd
@@ -12,3 +13,13 @@ coverage
 .idea/
 .vscode/*.local.json
 release-artifacts/
+cleanup-roadmap-temp.ps1
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
