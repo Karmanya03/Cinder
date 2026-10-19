@@ -101,8 +101,13 @@ pub fn walk_tree(root: &Path) -> std::io::Result<WalkOutput> {
         return Ok(out);
     }
 
+    // macOS exposes temporary directories through paths such as `/var/...`
+    // while directory traversal may return their physical `/private/var/...`
+    // paths. Walk and strip against the same canonical root so entries keep
+    // safe, relative archive names on every platform.
+    let canonical_root = std::fs::canonicalize(root)?;
     let mut entries: Vec<WalkedEntry> = Vec::new();
-    let walker = WalkDir::new(root).follow_links(false);
+    let walker = WalkDir::new(&canonical_root).follow_links(false);
     for entry in walker {
         match entry {
             Err(_) => out.skipped_errors += 1,
@@ -111,7 +116,7 @@ pub fn walk_tree(root: &Path) -> std::io::Result<WalkOutput> {
                 Ok(None) => out.skipped_specials += 1,
                 Ok(Some(kind)) => {
                     let abs = dir_entry.into_path();
-                    let Some(rel) = abs.strip_prefix(root).ok() else {
+                    let Some(rel) = abs.strip_prefix(&canonical_root).ok() else {
                         continue;
                     };
                     let rel_path = rel_string(rel);
